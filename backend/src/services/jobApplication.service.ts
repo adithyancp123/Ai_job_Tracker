@@ -41,6 +41,7 @@ const create = async (
     niceToHaveSkills: input.niceToHaveSkills || [],
     seniority: input.seniority?.trim() || undefined,
     dateApplied: new Date(input.dateApplied),
+    lastUpdatedDate: new Date(),
     userId: new Types.ObjectId(userId)
   });
 
@@ -65,7 +66,8 @@ const update = async (
       : {}),
     ...(input.niceToHaveSkills !== undefined ? { niceToHaveSkills: input.niceToHaveSkills } : {}),
     ...(input.seniority !== undefined ? { seniority: input.seniority?.trim() || undefined } : {}),
-    ...(input.dateApplied ? { dateApplied: new Date(input.dateApplied) } : {})
+    ...(input.dateApplied ? { dateApplied: new Date(input.dateApplied) } : {}),
+    lastUpdatedDate: new Date()
   };
 
   const updated = await JobApplication.findOneAndUpdate(

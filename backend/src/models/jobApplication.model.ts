@@ -22,6 +22,7 @@ export interface IJobApplication {
   niceToHaveSkills: string[];
   seniority?: string;
   location: string;
+  lastUpdatedDate: Date;
   userId: Types.ObjectId;
 }
 
@@ -38,6 +39,7 @@ const jobApplicationSchema = new Schema<IJobApplication>(
     niceToHaveSkills: { type: [String], default: [] },
     seniority: { type: String, required: false, trim: true },
     location: { type: String, required: true, trim: true },
+    lastUpdatedDate: { type: Date, required: true, default: Date.now },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true }
   },
   { timestamps: true }

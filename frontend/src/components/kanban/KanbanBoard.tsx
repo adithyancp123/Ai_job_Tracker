@@ -9,9 +9,10 @@ interface KanbanBoardProps {
   applications: JobApplication[];
   onStatusChange: (id: string, nextStatus: ApplicationStatus) => void;
   onCardClick: (application: JobApplication) => void;
+  highlightQuery?: string;
 }
 
-const KanbanBoard = ({ applications, onStatusChange, onCardClick }: KanbanBoardProps) => {
+const KanbanBoard = ({ applications, onStatusChange, onCardClick, highlightQuery }: KanbanBoardProps) => {
   const sensors = useSensors(useSensor(PointerSensor));
 
   const grouped = KANBAN_COLUMNS.reduce<Record<ApplicationStatus, JobApplication[]>>(
@@ -51,6 +52,7 @@ const KanbanBoard = ({ applications, onStatusChange, onCardClick }: KanbanBoardP
             title={status}
             items={grouped[status]}
             onCardClick={onCardClick}
+            highlightQuery={highlightQuery}
           />
         ))}
       </div>

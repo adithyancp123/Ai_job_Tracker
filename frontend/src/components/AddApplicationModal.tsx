@@ -46,12 +46,15 @@ const AddApplicationModal = ({ isOpen, onClose, onCreated, onToast }: AddApplica
   const [loadingSave, setLoadingSave] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [parseStreamText, setParseStreamText] = useState("");
+  const [suggestionsStreamText, setSuggestionsStreamText] = useState("");
 
   if (!isOpen) return null;
 
   const handleParseWithAI = async () => {
     setErrorMessage("");
     setSuccessMessage("");
+    setParseStreamText("");
     if (!jobDescriptionText.trim()) {
       setErrorMessage("Please paste a job description first.");
       return;
@@ -59,44 +62,33 @@ const AddApplicationModal = ({ isOpen, onClose, onCreated, onToast }: AddApplica
 
     setLoadingParse(true);
     try {
-      const description = jobDescriptionText;
-      const res = await fetch("http://localhost:5000/api/ai/parse-job", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ description })
+      const parsed = await aiService.streamParseJobDescription(jobDescriptionText, (delta) => {
+        setParseStreamText((prev) => prev + delta);
       });
 
-      const data = (await res.json()) as {
-        company?: string;
-        role?: string;
-        requiredSkills?: string[];
-        niceToHaveSkills?: string[];
-        location?: string;
-        seniority?: string;
-        error?: string;
-      };
-
-      // eslint-disable-next-line no-console
-      console.log("AI RESULT:", data);
-
-      if (!res.ok) {
-        throw new Error(data.error || "AI parsing failed");
-      }
-
-      setCompany(data.company || "");
-      setRole(data.role || "");
-      setRequiredSkills(data.requiredSkills?.join(", ") || "");
-      setNiceToHaveSkills(data.niceToHaveSkills?.join(", ") || "");
-      setLocation(data.location || "");
-      setSeniority(data.seniority || "");
-      setSuccessMessage("Fields autofilled from AI.");
+      setCompany(parsed.company || "");
+      setRole(parsed.role || "");
+      setRequiredSkills(parsed.requiredSkills?.join(", ") || "");
+      setNiceToHaveSkills(parsed.niceToHaveSkills?.join(", ") || "");
+      setLocation(parsed.location || "");
+      setSeniority(parsed.seniority || "");
+      setSuccessMessage("Fields autofilled from AI (streamed).");
     } catch (error) {
-      const message = getErrorMessage(error, "Failed to parse job description. Please try again.");
-      setErrorMessage(message);
-      onToast?.(message);
-      alert("AI parsing failed");
+      try {
+        // Fallback to normal (non-stream) endpoint if streaming fails
+        const parsed = await aiService.parseJobDescription(jobDescriptionText);
+        setCompany(parsed.company || "");
+        setRole(parsed.role || "");
+        setRequiredSkills(parsed.requiredSkills?.join(", ") || "");
+        setNiceToHaveSkills(parsed.niceToHaveSkills?.join(", ") || "");
+        setLocation(parsed.location || "");
+        setSeniority(parsed.seniority || "");
+        setSuccessMessage("Fields autofilled from AI.");
+      } catch (fallbackError) {
+        const message = getErrorMessage(fallbackError, "Failed to parse job description. Please try again.");
+        setErrorMessage(message);
+        onToast?.(message);
+      }
     } finally {
       setLoadingParse(false);
     }
@@ -105,6 +97,7 @@ const AddApplicationModal = ({ isOpen, onClose, onCreated, onToast }: AddApplica
   const handleGetResumeSuggestions = async () => {
     setErrorMessage("");
     setSuccessMessage("");
+    setSuggestionsStreamText("");
     if (!jobDescriptionText.trim()) {
       setErrorMessage("Please paste a job description first.");
       return;
@@ -112,11 +105,20 @@ const AddApplicationModal = ({ isOpen, onClose, onCreated, onToast }: AddApplica
 
     setLoadingSuggestions(true);
     try {
-      const suggestions = await aiService.getResumeSuggestions(jobDescriptionText);
+      const suggestions = await aiService.streamResumeSuggestions(jobDescriptionText, (delta) => {
+        setSuggestionsStreamText((prev) => prev + delta);
+      });
       setResumeSuggestions(suggestions);
-      setSuccessMessage("Resume suggestions generated.");
+      setSuccessMessage("Resume suggestions generated (streamed).");
     } catch {
-      setErrorMessage("Failed to generate resume suggestions. Please try again.");
+      try {
+        // Fallback to normal (non-stream) endpoint if streaming fails
+        const suggestions = await aiService.getResumeSuggestions(jobDescriptionText);
+        setResumeSuggestions(suggestions);
+        setSuccessMessage("Resume suggestions generated.");
+      } catch {
+        setErrorMessage("Failed to generate resume suggestions. Please try again.");
+      }
     } finally {
       setLoadingSuggestions(false);
     }
@@ -208,7 +210,7 @@ const AddApplicationModal = ({ isOpen, onClose, onCreated, onToast }: AddApplica
               onClick={handleParseWithAI}
               disabled={loadingParse}
             >
-              {loadingParse ? "Parsing..." : "Parse with AI"}
+              {loadingParse ? "Streaming..." : "Parse with AI"}
             </button>
             <button
               className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors duration-300 hover:bg-indigo-700 disabled:opacity-70"
@@ -216,10 +218,28 @@ const AddApplicationModal = ({ isOpen, onClose, onCreated, onToast }: AddApplica
               onClick={handleGetResumeSuggestions}
               disabled={loadingSuggestions}
             >
-              {loadingSuggestions ? "Generating..." : "Get Resume Suggestions"}
+              {loadingSuggestions ? "Streaming..." : "Get Resume Suggestions"}
             </button>
           </div>
         </div>
+
+        {parseStreamText ? (
+          <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Streaming output (parse)
+            </p>
+            <pre className="whitespace-pre-wrap break-words">{parseStreamText}</pre>
+          </div>
+        ) : null}
+
+        {suggestionsStreamText ? (
+          <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Streaming output (suggestions)
+            </p>
+            <pre className="whitespace-pre-wrap break-words">{suggestionsStreamText}</pre>
+          </div>
+        ) : null}
 
         {resumeSuggestions.length > 0 ? (
           <div className="mt-4 rounded-lg border border-slate-200 p-4 transition-colors duration-300 dark:border-slate-700">

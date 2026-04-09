@@ -6,6 +6,23 @@ const getClient = (): OpenAI => {
   return new OpenAI({ apiKey });
 };
 
+type SsePayload =
+  | { type: "delta"; text: string }
+  | { type: "done" }
+  | { type: "error"; message: string };
+
+const setSseHeaders = (res: Response) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders?.();
+};
+
+const sseSend = (res: Response, payload: SsePayload) => {
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+};
+
 const extractResponseText = (response: unknown): string => {
   const data = response as {
     output_text?: string;
@@ -200,6 +217,81 @@ ${description}
   }
 };
 
+export const parseJobStream = async (req: Request, res: Response): Promise<void> => {
+  setSseHeaders(res);
+
+  const body = req.body as { description?: string };
+  const description = body.description || "";
+
+  if (!description.trim()) {
+    sseSend(res, { type: "error", message: "No description provided" });
+    res.end();
+    return;
+  }
+
+  const apiKey = (process.env.OPENAI_API_KEY || "").trim();
+  if (!apiKey || apiKey === "dummy_key") {
+    sseSend(res, { type: "error", message: "OPENAI_API_KEY is missing or invalid" });
+    res.end();
+    return;
+  }
+
+  const prompt = `
+Extract structured information from this job description.
+
+Return ONLY valid JSON in this format:
+{
+  "company": "string",
+  "role": "string",
+  "requiredSkills": ["string"],
+  "niceToHaveSkills": ["string"],
+  "location": "string",
+  "seniority": "string"
+}
+
+Job Description:
+${description}
+  `;
+
+  const client = getClient();
+  const streamFn = (client.responses as unknown as { stream?: (args: unknown) => unknown }).stream;
+  if (typeof streamFn !== "function") {
+    sseSend(res, { type: "error", message: "Streaming not supported by OpenAI client" });
+    res.end();
+    return;
+  }
+
+  let stream: unknown;
+  try {
+    stream = streamFn.call(client.responses, {
+      model: "gpt-4o-mini",
+      input: prompt
+    });
+
+    req.on("close", () => {
+      const maybeAbort = stream as { abort?: () => void };
+      maybeAbort.abort?.();
+    });
+
+    for await (const event of stream as AsyncIterable<unknown>) {
+      const e = event as { type?: unknown; delta?: unknown; text?: unknown };
+      if (e.type === "response.output_text.delta") {
+        const delta = typeof e.delta === "string" ? e.delta : typeof e.text === "string" ? e.text : "";
+        if (delta) sseSend(res, { type: "delta", text: delta });
+      }
+    }
+
+    sseSend(res, { type: "done" });
+    res.end();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Streaming failed";
+    // eslint-disable-next-line no-console
+    console.error("AI STREAM ERROR (parse job):", error);
+    sseSend(res, { type: "error", message });
+    res.end();
+  }
+};
+
 export const resumeSuggestions = async (req: Request, res: Response): Promise<Response> => {
   try {
     const body = req.body as { description?: string; jobDescriptionText?: string };
@@ -276,6 +368,76 @@ ${description}
     return res.json({
       suggestions: fallbackResumeSuggestions((req.body as { description?: string }).description || "")
     });
+  }
+};
+
+export const resumeSuggestionsStream = async (req: Request, res: Response): Promise<void> => {
+  setSseHeaders(res);
+
+  const body = req.body as { description?: string; jobDescriptionText?: string };
+  const description = (body.description || body.jobDescriptionText || "").trim();
+
+  if (!description) {
+    sseSend(res, { type: "error", message: "No description provided" });
+    res.end();
+    return;
+  }
+
+  const apiKey = (process.env.OPENAI_API_KEY || "").trim();
+  if (!apiKey || apiKey === "dummy_key") {
+    sseSend(res, { type: "error", message: "OPENAI_API_KEY is missing or invalid" });
+    res.end();
+    return;
+  }
+
+  const prompt = `
+Generate 3 to 5 strong resume bullet points tailored to the job description.
+
+Return ONLY valid JSON in this exact format:
+{
+  "suggestions": ["bullet1", "bullet2", "bullet3"]
+}
+
+Job Description:
+${description}
+  `;
+
+  const client = getClient();
+  const streamFn = (client.responses as unknown as { stream?: (args: unknown) => unknown }).stream;
+  if (typeof streamFn !== "function") {
+    sseSend(res, { type: "error", message: "Streaming not supported by OpenAI client" });
+    res.end();
+    return;
+  }
+
+  let stream: unknown;
+  try {
+    stream = streamFn.call(client.responses, {
+      model: "gpt-4o-mini",
+      input: prompt
+    });
+
+    req.on("close", () => {
+      const maybeAbort = stream as { abort?: () => void };
+      maybeAbort.abort?.();
+    });
+
+    for await (const event of stream as AsyncIterable<unknown>) {
+      const e = event as { type?: unknown; delta?: unknown; text?: unknown };
+      if (e.type === "response.output_text.delta") {
+        const delta = typeof e.delta === "string" ? e.delta : typeof e.text === "string" ? e.text : "";
+        if (delta) sseSend(res, { type: "delta", text: delta });
+      }
+    }
+
+    sseSend(res, { type: "done" });
+    res.end();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Streaming failed";
+    // eslint-disable-next-line no-console
+    console.error("AI STREAM ERROR (resume suggestions):", error);
+    sseSend(res, { type: "error", message });
+    res.end();
   }
 };
 
@@ -378,6 +540,8 @@ ${resume}
 
 export default {
   parseJob,
+  parseJobStream,
   resumeSuggestions,
+  resumeSuggestionsStream,
   matchScore
 };

@@ -8,9 +8,10 @@ interface KanbanColumnProps {
   title: ApplicationStatus;
   items: JobApplication[];
   onCardClick: (application: JobApplication) => void;
+  highlightQuery?: string;
 }
 
-const KanbanColumn = ({ title, items, onCardClick }: KanbanColumnProps) => {
+const KanbanColumn = ({ title, items, onCardClick, highlightQuery }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: title,
     data: { type: "column", status: title }
@@ -62,6 +63,7 @@ const KanbanColumn = ({ title, items, onCardClick }: KanbanColumnProps) => {
                 key={application._id}
                 application={application}
                 onClick={onCardClick}
+                highlightQuery={highlightQuery}
               />
             ))
           )}

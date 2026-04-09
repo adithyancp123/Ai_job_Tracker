@@ -21,6 +21,7 @@ export interface JobApplication {
   niceToHaveSkills?: string[];
   seniority?: string;
   location?: string;
+  lastUpdatedDate?: string;
 }
 
 export interface CreateJobApplicationPayload {
