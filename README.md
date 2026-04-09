@@ -1,147 +1,165 @@
-# AI Job Application Tracker
+# 🚀 AI Job Tracker (MERN + AI)
 
-AI Job Application Tracker is a full-stack MERN application built with TypeScript that helps users manage their job search pipeline in a visual Kanban workflow.  
-It also includes AI-assisted productivity features to parse job descriptions and generate resume bullet suggestions tailored to each role.
+A full-stack AI-powered job application tracker that helps users manage job applications and generate smart resume suggestions using OpenAI.
 
-## Features
+---
 
-- **Authentication (JWT)**
-  - Secure register/login flow
-  - Token-based protected API access
-- **Kanban Board (Drag & Drop)**
-  - Columns: Applied, Phone Screen, Interview, Offer, Rejected
-  - Drag-and-drop status updates with optimistic UI behavior
-- **AI Job Description Parsing**
-  - Extracts company, role, skills, seniority, and location from pasted job descriptions
-- **Resume Bullet Suggestions**
-  - Generates 3-5 targeted resume bullets using OpenAI
-  - One-click copy support in the UI
-- **Application CRUD**
-  - Create, read, update, and delete job applications scoped to the authenticated user
+## 🌐 Live Demo
 
-## Tech Stack
+* **Frontend:** https://ai-job-tracker-vert.vercel.app/
+* **Backend API:** https://ai-job-tracker-backend-nlna.onrender.com
 
-- **Frontend:** React, TypeScript, Vite, Tailwind CSS, React Router, Axios, dnd-kit
-- **Backend:** Node.js, Express, TypeScript, JWT, bcrypt
-- **Database:** MongoDB with Mongoose
-- **AI:** OpenAI API
+---
 
-## Folder Structure
+## 📌 Features
 
-```text
-ai-job-tracker/
-├─ backend/
-│  ├─ src/
-│  │  ├─ config/
-│  │  ├─ controllers/
-│  │  ├─ middleware/
-│  │  ├─ models/
-│  │  ├─ routes/
-│  │  ├─ services/
-│  │  ├─ app.ts
-│  │  └─ server.ts
-│  ├─ .env.example
-│  └─ package.json
-├─ frontend/
-│  ├─ src/
-│  │  ├─ components/
-│  │  ├─ hooks/
-│  │  ├─ pages/
-│  │  ├─ services/
-│  │  ├─ types/
-│  │  ├─ App.tsx
-│  │  └─ main.tsx
-│  ├─ .env.example
-│  └─ package.json
-└─ package.json
+### 🔐 Authentication
+
+* JWT-based login & signup
+* Secure password hashing using bcrypt
+
+---
+
+### 📊 Application Management
+
+* Create, edit, delete job applications
+* Track application status:
+
+  * Applied
+  * Phone Screen
+  * Interview
+  * Offer
+  * Rejected
+* Store:
+
+  * Company
+  * Role
+  * Job description link (optional)
+  * Notes
+  * Applied date
+  * Salary range (optional)
+
+---
+
+### 🤖 AI Features
+
+* Parse job descriptions using OpenAI
+* Extract:
+
+  * Company name
+  * Role
+  * Required skills
+  * Nice-to-have skills
+  * Seniority
+  * Location
+* Generate AI-powered resume bullet suggestions
+
+---
+
+### 🧩 UI Features
+
+* Drag-and-drop Kanban board
+* Dashboard with application statistics
+* Loading, error, and empty states handled
+* Responsive UI with Tailwind CSS
+* Dark mode support 🌙
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+* React + TypeScript
+* Tailwind CSS
+* Vite
+
+### Backend
+
+* Node.js + Express
+* TypeScript
+
+### Database
+
+* MongoDB (Mongoose)
+
+### Authentication
+
+* JWT + bcrypt
+
+### AI
+
+* OpenAI API (structured JSON output)
+
+---
+
+## ⚙️ Environment Variables
+
+### Backend (.env)
+
+```env
+MONGO_URI=your_mongodb_connection
+JWT_SECRET=your_secret
+OPENAI_API_KEY=your_openai_key
+PORT=5000
 ```
 
-## Setup Instructions
+### Frontend (.env)
 
-### 1) Clone the repository
+```env
+VITE_API_URL=https://ai-job-tracker-backend-nlna.onrender.com
+```
+
+---
+
+## 🚀 Installation & Setup
+
+### Clone the repository
 
 ```bash
-git clone <your-repo-url>
-cd ai-job-tracker
+git clone https://github.com/your-username/Ai_job_Tracker.git
+cd Ai_job_Tracker
 ```
 
-### 2) Install dependencies
-
-Install root dependencies:
+### Install dependencies
 
 ```bash
 npm install
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-Install backend dependencies:
-
-```bash
-cd backend
-npm install
-```
-
-Install frontend dependencies:
-
-```bash
-cd ../frontend
-npm install
-```
-
-### 3) Configure environment variables
-
-Create `.env` files from examples:
-
-- `backend/.env` from `backend/.env.example`
-- `frontend/.env` from `frontend/.env.example`
-
-### 4) Run frontend and backend
-
-From the project root:
+### Run locally
 
 ```bash
 npm run dev
 ```
 
-This runs both services concurrently:
+---
 
-- Backend: `http://localhost:5000`
-- Frontend: `http://localhost:5173`
+## 📦 Deployment
 
-## Environment Variables
-
-Use these keys in `backend/.env`:
-
-```env
-MONGO_URI=mongodb://localhost:27017/ai-job-tracker
-JWT_SECRET=replace-with-strong-secret
-OPENAI_API_KEY=your-openai-api-key
-```
-
-## Architecture Decisions
-
-- **Service Layer for AI**
-  - OpenAI integration is isolated in service modules
-  - Controllers orchestrate requests/responses; routes remain thin
-- **Separation of Concerns**
-  - Distinct layers for routes, controllers, services, models, and middleware
-  - Improves maintainability, testability, and extensibility
-- **Typed Contracts**
-  - TypeScript types for payloads and responses reduce runtime bugs
-  - Strong typing across frontend and backend data flow
-- **User-Scoped Data Access**
-  - All application operations are tied to authenticated user context for security
-
-## Future Improvements
-
-- Add automated tests (unit/integration/e2e)
-- Add refresh token/session management strategy
-- Add role-based access control (RBAC)
-- Add analytics and reporting (application conversion funnel)
-- Add calendar reminders and interview scheduling
-- Add file attachments (resume versions, cover letters)
-- Add deployment pipeline (Docker + CI/CD)
-- Add observability (structured logs, error tracking, metrics)
+* Backend deployed on **Render**
+* Frontend deployed on **Vercel**
 
 ---
 
-Built as a recruiter-friendly portfolio project demonstrating full-stack architecture, secure authentication, AI integration, and modern frontend UX.
+## 🎯 Key Highlights
+
+* Clean TypeScript-based architecture
+* AI logic handled in service layer
+* Proper error handling for AI responses
+* No hardcoded API keys (uses environment variables)
+* Fully functional full-stack deployment
+
+---
+
+## 👨‍💻 Author
+
+**Adithyan C P**
+
+---
+
+## ⭐ Support
+
+If you like this project, consider giving it a ⭐ on GitHub!
