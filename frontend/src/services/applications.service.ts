@@ -7,7 +7,7 @@ import type {
 } from "../types/application.types";
 
 const getApplications = async (): Promise<JobApplication[]> => {
-  const { data } = await api.get<JobApplication[]>("/api/applications");
+  const { data } = await api.get<JobApplication[]>("/applications");
   return data;
 };
 
@@ -15,14 +15,14 @@ const updateApplicationStatus = async (
   id: string,
   status: ApplicationStatus
 ): Promise<JobApplication> => {
-  const { data } = await api.put<JobApplication>(`/api/applications/${id}`, { status });
+  const { data } = await api.put<JobApplication>(`/applications/${id}`, { status });
   return data;
 };
 
 const createApplication = async (
   payload: CreateJobApplicationPayload
 ): Promise<JobApplication> => {
-  const { data } = await api.post<JobApplication>("/api/applications", payload);
+  const { data } = await api.post<JobApplication>("/applications", payload);
   return data;
 };
 
@@ -30,12 +30,12 @@ const updateApplication = async (
   id: string,
   payload: UpdateJobApplicationPayload
 ): Promise<JobApplication> => {
-  const { data } = await api.put<JobApplication>(`/api/applications/${id}`, payload);
+  const { data } = await api.put<JobApplication>(`/applications/${id}`, payload);
   return data;
 };
 
 const deleteApplication = async (id: string): Promise<void> => {
-  await api.delete(`/api/applications/${id}`);
+  await api.delete(`/applications/${id}`);
 };
 
 const applicationsService = {

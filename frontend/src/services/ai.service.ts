@@ -7,6 +7,11 @@ interface ResumeSuggestionsResponse {
 
 type StreamDeltaHandler = (delta: string) => void;
 
+const baseUrl = ((import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000").replace(
+  /\/$/,
+  ""
+);
+
 const parseJsonFromText = (text: string): unknown => {
   let cleaned = (text || "").replace(/```json/g, "").replace(/```/g, "").trim();
   const firstBrace = cleaned.indexOf("{");
@@ -84,7 +89,7 @@ const streamSseText = async (
 };
 
 const parseJobDescription = async (jobDescriptionText: string): Promise<ParsedJobData> => {
-  const { data } = await api.post<ParsedJobData>("http://localhost:5000/api/ai/parse-job", {
+  const { data } = await api.post<ParsedJobData>("/ai/parse-job", {
     description: jobDescriptionText
   });
   if (
@@ -102,7 +107,7 @@ const parseJobDescription = async (jobDescriptionText: string): Promise<ParsedJo
 };
 
 const getResumeSuggestions = async (jobDescriptionText: string): Promise<string[]> => {
-  const { data } = await api.post<ResumeSuggestionsResponse>("/api/ai/resume-suggestions", {
+  const { data } = await api.post<ResumeSuggestionsResponse>("/ai/resume-suggestions", {
     jobDescriptionText
   });
   if (!data || !Array.isArray(data.suggestions)) {
@@ -115,7 +120,7 @@ const streamParseJobDescription = async (
   jobDescriptionText: string,
   onDelta?: StreamDeltaHandler
 ): Promise<ParsedJobData> => {
-  const text = await streamSseText("http://localhost:5000/api/ai/parse-job/stream", {
+  const text = await streamSseText(`${baseUrl}/api/ai/parse-job/stream`, {
     description: jobDescriptionText
   }, onDelta);
 
@@ -134,7 +139,7 @@ const streamResumeSuggestions = async (
   jobDescriptionText: string,
   onDelta?: StreamDeltaHandler
 ): Promise<string[]> => {
-  const text = await streamSseText("http://localhost:5000/api/ai/resume-suggestions/stream", {
+  const text = await streamSseText(`${baseUrl}/api/ai/resume-suggestions/stream`, {
     jobDescriptionText
   }, onDelta);
 
